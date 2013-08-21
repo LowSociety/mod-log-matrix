@@ -3,17 +3,14 @@
 // @namespace    reddit.com/user/LowSociety
 // @description    Get a nice matrix of mod actions on reddit.
 // @match    *://*.reddit.com/r/*/about/log*
-// @version    1.0
+// @version    1.1
 // ==/UserScript==
 
 var modLogMatrix = {
 
 	limit : 100,
-	
 	after : null,
-	
 	subredditUrl : null,
-	
 	subredditModerators : null,
 	subredditActions : null,
 	total : 0,
@@ -31,14 +28,16 @@ var modLogMatrix = {
     },
 	
     addButton : function() {
-     	
-        var modLogLink = $("#moderation_tools ul.content .reddit-moderationlog");
-        
-        var link = $("<a></a>").addClass("reddit-moderationlog").wrap("<li></li>").text("moderation log matrix").attr("href","#matrix");
 		
-		link.click(function() { modLogMatrix.renderMatrix(); });
+        // The reason for the <span> is in case the user has both report matrix AND report gen: http://i.imgur.com/Izbm6Rh.png,
+        // the reason the &nbsp; is before and after is becase we don't know which script will load first.  Not a great solution, but it works.
+        $('.menuarea').append('\
+            <div class="spacer">\
+                <span style="float:right;">&nbsp;<a class="reddit-moderationlog" href="#matrix" >moderation log matrix</a>&nbsp;</span>\
+            </div>\
+        ');
         
-        modLogLink.parent().after(link);
+		$('.reddit-moderationlog').click(function() { modLogMatrix.renderMatrix(); });
     },
     
     renderMatrix : function() {
@@ -68,7 +67,6 @@ var modLogMatrix = {
 		header.append("<th style=\"text-align: center; font-weight: bold;\">Total</th>");
 		footer.append("<td class=\"action-total\" style=\"text-align: center; font-weight: bold;\">0</td>");
 		
-		
 		var body = $("<tbody></tbody");
 		
 		header.parent().appendTo(matrix);
@@ -81,17 +79,12 @@ var modLogMatrix = {
 			this.createModeratorRow(moderator);
 		}
 		
-				
-		// Replace next/prev with "Load more"
-		var nextprev = $(".content .nextprev");
-		if(nextprev.length == 0)
-			nextprev = $("<p></p>").addClass("nextprev").appendTo($("#siteTable").parent());
-		else
-			nextprev.find("a").hide();
-			
-		var loadMore = $("<a></a>").attr("id","matrix-load-more").attr("href","#matrix").click(function() {
+		// Hide next/prev (if RES, not an issue).
+		$(".content .nextprev").hide();
+        
+        $('.reddit-moderationlog').unbind('click').click(function() {
 			modLogMatrix.getActions();
-		}).appendTo(nextprev);
+		});
 		
 		// Load data
 		this.getActions();
@@ -121,7 +114,7 @@ var modLogMatrix = {
 		var filterMod = this.getQuerystringByName("mod");
 			if(filterMod != null) requestData.mod = filterMod;
 		
-		$("#matrix-load-more").text("Loading...");
+		$(".reddit-moderationlog").text("loading...");
 		$.getJSON(this.subredditUrl + "about/log.json", requestData, function(response) {
 			var data = response.data;
 			modLogMatrix.after = data.after
@@ -160,7 +153,7 @@ var modLogMatrix = {
 			}
 			matrix.find(".totals .action-total").text(modLogMatrix.total);
 			
-			$("#matrix-load-more").text("Load " + modLogMatrix.limit + " more actions");
+			$(".reddit-moderationlog").text("load " + modLogMatrix.limit + " more actions");
 		});
 	},
 	
